@@ -1,0 +1,35 @@
+---
+interface Props {
+  title?: string;
+}
+const { title = 'Field Operations' } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{title} — Secret Agent</title>
+</head>
+<body>
+  <header>
+    <nav class="container" style="display:flex;gap:2rem;align-items:center;padding-top:1rem;padding-bottom:1rem;border-bottom:1px solid var(--border)">
+      <a href={`${base}/`} style="color:var(--accent);font-size:0.75rem;letter-spacing:0.15em">SA:FO</a>
+      <a href={`${base}/rules`}>RULES</a>
+      <a href={`${base}/games`}>GAMES</a>
+      <a href={`${base}/handler`} style="margin-left:auto;color:var(--dim)">HANDLER</a>
+    </nav>
+  </header>
+  <main>
+    <slot />
+  </main>
+  <footer class="container" style="border-top:1px solid var(--border);padding-top:1rem;margin-top:3rem;color:var(--dim);font-size:0.75rem;letter-spacing:0.08em">
+    SECRET AGENT: FIELD OPERATIONS — ALL MISSIONS CLASSIFIED — STAY COVERED
+  </footer>
+</body>
+</html>
+
+<style is:global>
+  @import '../styles/global.css';
+</style>

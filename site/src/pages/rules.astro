@@ -1,0 +1,74 @@
+---
+import Layout from '../components/Layout.astro';
+---
+<Layout title="Rules">
+  <div class="container">
+    <p class="dim" style="font-size:0.75rem">// FIELD MANUAL — SECTION 1</p>
+    <h1>RULES</h1>
+    <p style="margin-bottom:1.5rem;color:var(--dim)">
+      The canonical rules are maintained in the repository. This page is a quick-start summary.
+    </p>
+
+    <div class="card">
+      <h2>CORE CONCEPT</h2>
+      <p>
+        Players become undercover agents operating in plain sight. Each agent receives a secret mission
+        that must be completed without revealing the game, the mission, or their identity as an active agent.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>QUICK RULES</h2>
+      <ol style="padding-left:1.2rem;line-height:2.2">
+        <li>Scan the QR code, choose a handle, accept a mission.</li>
+        <li>Keep the game secret.</li>
+        <li>Complete your mission without exposing yourself.</li>
+        <li>Gather evidence (photo, video, physical object).</li>
+        <li>Submit evidence to the Handler.</li>
+        <li>Expose rival agents when possible.</li>
+        <li>Stay believable.</li>
+        <li>Respect safety rules.</li>
+        <li>The Handler's ruling is final.</li>
+      </ol>
+    </div>
+
+    <div class="card">
+      <h2>SCORING</h2>
+      <table>
+        <tr><td>Mission completion</td><td class="score">+3</td></tr>
+        <tr><td>Stylish / difficult completion bonus</td><td class="score">+1</td></tr>
+        <tr><td>Exposing another agent</td><td class="score">+2</td></tr>
+        <tr><td>Surviving the event without exposure</td><td class="score">+2</td></tr>
+        <tr><td>Cover blown (being exposed)</td><td class="score" style="color:var(--danger)">−3</td></tr>
+        <tr><td>Failed exposure attempt</td><td class="score" style="color:var(--danger)">−1</td></tr>
+        <tr><td>Revealing your mission intentionally</td><td class="score" style="color:var(--danger)">mission fail</td></tr>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>STATUSES</h2>
+      <p><span class="badge badge-secret-agent">SECRET AGENT</span> — Active. Mission in progress.</p>
+      <br />
+      <p><span class="badge badge-special-agent">SPECIAL AGENT</span> — Mission completed. Evidence accepted.</p>
+      <br />
+      <p><span class="badge badge-burned">BURNED</span> — Exposed. Can still play; no stealth bonuses.</p>
+    </div>
+
+    <div class="card">
+      <h2>SAFETY</h2>
+      <p>All missions must be:</p>
+      <ul style="padding-left:1.2rem;margin-top:0.5rem;line-height:2">
+        <li>Legal and venue-appropriate</li>
+        <li>Non-harassing and consensual</li>
+        <li>Free from touching strangers without consent</li>
+        <li>Free from blocking walkways or interfering with staff</li>
+        <li>Free from humiliating, discriminatory, or sexual content</li>
+      </ul>
+    </div>
+
+    <a href="https://github.com/yourusername/secret-agent/blob/main/Secret_Agent_Field_Operations_Rules.md"
+       style="color:var(--dim);font-size:0.8rem">
+      → Full canonical rules on GitHub
+    </a>
+  </div>
+</Layout>

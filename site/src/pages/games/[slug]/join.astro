@@ -1,0 +1,181 @@
+---
+// This is the page the QR code links to.
+// Agents land here, enter a handle, and receive a one-time mission briefing.
+// The mission text is never in the static HTML — it comes from the Lambda API
+// and is displayed once, then dismissed. No persistent copy is stored client-side.
+
+import Layout from '../../../components/Layout.astro';
+import games from '../../../data/games.json';
+
+export function getStaticPaths() {
+  return games.map(game => ({ params: { slug: game.slug }, props: { game } }));
+}
+
+const { game } = Astro.props;
+const apiBase = import.meta.env.PUBLIC_API_URL ?? '';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+<Layout title={`Join — ${game.title}`}>
+  <div class="container">
+    <p class="dim" style="font-size:0.75rem">// MISSION INTAKE — {game.slug.toUpperCase()}</p>
+    <h1>{game.title}</h1>
+
+    {game.status !== 'active' ? (
+      <div class="card" style="border-color:var(--dim);margin-top:1.5rem">
+        <p style="color:var(--dim)">
+          INTAKE OFFLINE<br/>
+          Game status: <strong>{game.status.toUpperCase()}</strong>
+        </p>
+      </div>
+    ) : (
+      <div id="intake" style="margin-top:1.5rem">
+
+        <!-- Step 1: Handle entry -->
+        <div id="step-register" class="card">
+          <h2>AGENT REGISTRATION</h2>
+          <p style="color:var(--dim);margin-bottom:1.25rem">
+            Choose your operational handle. This is the alias you will use for the duration of the game.
+            It cannot be changed after registration.
+          </p>
+
+          <label for="handle-input">AGENT HANDLE</label>
+          <input
+            type="text"
+            id="handle-input"
+            maxlength="24"
+            autocomplete="off"
+            autocorrect="off"
+            spellcheck="false"
+            placeholder="e.g. NIGHTFALL"
+            style="margin-bottom:1rem"
+          />
+
+          <button class="btn" id="btn-register">ACCEPT MISSION</button>
+          <p class="error" id="register-error"></p>
+        </div>
+
+        <!-- Step 2: Mission briefing (shown once after registration) -->
+        <div id="step-briefing" class="card" style="display:none">
+          <div style="margin-bottom:1.25rem">
+            <span class="stamp stamp-classified">CLASSIFIED</span>
+          </div>
+          <h2>MISSION BRIEFING</h2>
+          <p class="dim" style="font-size:0.8rem;margin-bottom:1.25rem">
+            READ CAREFULLY. THIS BRIEFING WILL NOT BE SHOWN AGAIN AFTER YOU DISMISS IT.
+          </p>
+          <hr />
+
+          <div id="briefing-body" style="line-height:2.2"></div>
+
+          <hr />
+          <p style="margin-bottom:0.25rem">
+            <span class="dim">EVIDENCE:</span> <span id="briefing-evidence"></span>
+          </p>
+          <p>
+            <span class="dim">SUBMISSION:</span> <span id="briefing-contact"></span>
+          </p>
+          <br />
+          <button class="btn" id="btn-confirm">I HAVE MEMORIZED MY MISSION</button>
+        </div>
+
+        <!-- Step 3: Confirmed / registered -->
+        <div id="step-confirmed" class="card" style="display:none">
+          <div style="margin-bottom:1.25rem">
+            <span class="stamp stamp-approved">REGISTERED</span>
+          </div>
+          <p>
+            Agent <strong id="confirmed-handle"></strong> is active.<br/>
+            Your mission is in effect. Maintain cover.
+          </p>
+          <br />
+          <a href={`${base}/games/${game.slug}/leaderboard`} class="btn">VIEW LEADERBOARD</a>
+        </div>
+
+      </div>
+    )}
+  </div>
+</Layout>
+
+<script define:vars={{ slug: game.slug, apiBase }}>
+  const registerEl  = document.getElementById('step-register');
+  const briefingEl  = document.getElementById('step-briefing');
+  const confirmedEl = document.getElementById('step-confirmed');
+  const handleInput = document.getElementById('handle-input');
+  const errorEl     = document.getElementById('register-error');
+  const btnRegister = document.getElementById('btn-register');
+  const btnConfirm  = document.getElementById('btn-confirm');
+
+  if (btnRegister) {
+    btnRegister.addEventListener('click', async () => {
+      const handle = handleInput.value.trim();
+      errorEl.textContent = '';
+
+      if (!handle)         { errorEl.textContent = 'HANDLE REQUIRED.'; return; }
+      if (handle.length > 24) { errorEl.textContent = 'HANDLE TOO LONG — 24 CHARACTERS MAX.'; return; }
+
+      btnRegister.disabled = true;
+      btnRegister.textContent = 'CONTACTING HANDLER...';
+
+      try {
+        const res = await fetch(`${apiBase}/games/${slug}/agents`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ handle }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          errorEl.textContent = (data.error ?? 'REGISTRATION FAILED.').toUpperCase();
+          btnRegister.disabled = false;
+          btnRegister.textContent = 'ACCEPT MISSION';
+          return;
+        }
+
+        const m = data.mission;
+        document.getElementById('briefing-body').innerHTML = [
+          `<p><span class="dim">CATEGORY:</span> ${esc(m.category)}</p>`,
+          `<p><span class="dim">DIFFICULTY:</span> ${esc(m.difficulty)}</p>`,
+          `<br/>`,
+          `<p><span class="dim">OBJECTIVE:</span> ${esc(m.objective)}</p>`,
+          `<br/>`,
+          `<p><span class="dim">COVER STORY:</span> ${esc(m.coverStory)}</p>`,
+        ].join('');
+        document.getElementById('briefing-evidence').textContent = m.evidence;
+        document.getElementById('briefing-contact').textContent  = m.handlerContact;
+
+        registerEl.style.display = 'none';
+        briefingEl.style.display = 'block';
+
+      } catch {
+        errorEl.textContent = 'CONNECTION FAILED. CHECK SIGNAL AND TRY AGAIN.';
+        btnRegister.disabled = false;
+        btnRegister.textContent = 'ACCEPT MISSION';
+      }
+    });
+  }
+
+  if (btnConfirm) {
+    btnConfirm.addEventListener('click', () => {
+      const handle = handleInput.value.trim().toUpperCase();
+      document.getElementById('confirmed-handle').textContent = handle;
+
+      // Clear briefing content from DOM so it cannot be retrieved after dismissal
+      document.getElementById('briefing-body').innerHTML     = '';
+      document.getElementById('briefing-evidence').textContent = '';
+      document.getElementById('briefing-contact').textContent  = '';
+
+      briefingEl.style.display  = 'none';
+      confirmedEl.style.display = 'block';
+    });
+  }
+
+  // Minimal HTML escape to prevent XSS from API-returned mission text
+  function esc(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+</script>

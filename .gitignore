@@ -1,0 +1,17 @@
+node_modules/
+.DS_Store
+.env
+.env.local
+
+# Astro
+site/.astro/
+site/dist/
+site/node_modules/
+
+# SAM build
+.aws-sam/
+infra/.aws-sam/
+samconfig.toml
+
+# Lambda deps (installed during sam build)
+lambda/node_modules/

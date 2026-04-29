@@ -1,0 +1,90 @@
+---
+import Layout from '../../components/Layout.astro';
+import games from '../../data/games.json';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+<Layout title="QR Code Generator">
+  <div class="container">
+    <p class="dim" style="font-size:0.75rem">// HANDLER CONSOLE — QR GENERATOR</p>
+    <h1>INTAKE QR CODES</h1>
+    <p class="dim" style="margin-bottom:1.5rem">
+      Generate printable QR codes linking agents to the mission intake page.
+      Print and place at the event venue.
+    </p>
+
+    <div class="card">
+      <label for="game-select">SELECT GAME INSTANCE</label>
+      <select id="game-select" style="margin-bottom:1rem">
+        {games.map(g => <option value={g.slug}>{g.title} ({g.status})</option>)}
+      </select>
+
+      <label for="label-input">LABEL TEXT (printed below QR)</label>
+      <input type="text" id="label-input" value="Scan to accept your mission" style="margin-bottom:1rem" />
+
+      <div style="display:flex;gap:0.75rem;flex-wrap:wrap">
+        <button class="btn" id="btn-generate">GENERATE</button>
+        <button class="btn" id="btn-download" disabled>DOWNLOAD PNG</button>
+      </div>
+    </div>
+
+    <div class="card" id="qr-card" style="display:none;text-align:center">
+      <div id="qr-output" style="display:inline-block;padding:1rem;background:#fff"></div>
+      <p id="qr-label" style="margin-top:0.75rem;letter-spacing:0.08em"></p>
+      <p id="qr-url" class="dim" style="font-size:0.75rem;margin-top:0.25rem;word-break:break-all"></p>
+    </div>
+  </div>
+</Layout>
+
+<script define:vars={{ base, siteOrigin: import.meta.env.SITE ?? '' }}>
+  // QRCode.js loaded from CDN below
+  const select    = document.getElementById('game-select');
+  const labelIn   = document.getElementById('label-input');
+  const btnGen    = document.getElementById('btn-generate');
+  const btnDl     = document.getElementById('btn-download');
+  const card      = document.getElementById('qr-card');
+  const output    = document.getElementById('qr-output');
+  const labelEl   = document.getElementById('qr-label');
+  const urlEl     = document.getElementById('qr-url');
+
+  let qrInstance = null;
+
+  function generate() {
+    const slug = select.value;
+    const origin = siteOrigin || window.location.origin;
+    const url = `${origin}${base}/games/${slug}/join`;
+
+    output.innerHTML = '';
+
+    // QRCode from CDN — dark on white for scanner compatibility
+    qrInstance = new window.QRCode(output, {
+      text: url,
+      width: 256,
+      height: 256,
+      colorDark: '#000000',
+      colorLight: '#ffffff',
+      correctLevel: window.QRCode.CorrectLevel.H,
+    });
+
+    labelEl.textContent = labelIn.value;
+    urlEl.textContent   = url;
+    card.style.display  = 'block';
+    btnDl.disabled      = false;
+  }
+
+  function download() {
+    const canvas = output.querySelector('canvas');
+    if (!canvas) return;
+    const a = document.createElement('a');
+    a.download = `secret-agent-${select.value}-intake-qr.png`;
+    a.href = canvas.toDataURL('image/png');
+    a.click();
+  }
+
+  btnGen.addEventListener('click', generate);
+  btnDl.addEventListener('click', download);
+</script>
+
+<!-- QRCode.js — MIT license, no tracking, self-contained -->
+<script is:inline src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"
+  integrity="sha512-CNgIRecGo7nphbeZ04Sc13ka07paqdeTu0WR1IM4kNcpmBAUSHSr9FzhIdYFFMZy0MnCyBm979Dkq01bEKGqQ=="
+  crossorigin="anonymous" referrerpolicy="no-referrer"></script>

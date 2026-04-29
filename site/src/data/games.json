@@ -1,0 +1,24 @@
+[
+  {
+    "slug": "defcon-2026",
+    "title": "Secret Agent: DEF CON 2026",
+    "status": "planned",
+    "startDate": "2026-08-01",
+    "endDate": "2026-08-04",
+    "location": "Las Vegas, NV",
+    "handler": "Control",
+    "briefing": "Field operations will be conducted throughout the convention. Maintain cover at all times. Submit evidence through approved dead drops only. No discussing missions with other agents.",
+    "intakeEnabled": true
+  },
+  {
+    "slug": "test-game",
+    "title": "Secret Agent: Test Instance",
+    "status": "active",
+    "startDate": "2026-01-01",
+    "endDate": "2026-12-31",
+    "location": "TBD",
+    "handler": "Control",
+    "briefing": "Development and handler training instance. All operations are simulated.",
+    "intakeEnabled": true
+  }
+]

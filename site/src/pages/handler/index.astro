@@ -1,0 +1,64 @@
+---
+import Layout from '../../components/Layout.astro';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+<Layout title="Handler Tools">
+  <div class="container">
+    <p class="dim" style="font-size:0.75rem">// HANDLER CONSOLE — RESTRICTED</p>
+    <h1>HANDLER TOOLS</h1>
+    <p class="dim" style="margin-bottom:1.5rem">Operational resources. Not for agent access.</p>
+
+    <div class="card">
+      <h2>QR CODE GENERATOR</h2>
+      <p style="margin-bottom:1rem">Generate printable intake QR codes for game instances.</p>
+      <a href={`${base}/handler/qr-codes`} class="btn">OPEN QR GENERATOR</a>
+    </div>
+
+    <div class="card">
+      <h2>API OPERATIONS</h2>
+      <p style="color:var(--dim);margin-bottom:1rem">
+        Handler API calls require the <code>X-Handler-Key</code> header.
+        The key is set during SAM deployment as the <code>HandlerApiKey</code> parameter.
+      </p>
+      <table>
+        <thead>
+          <tr><th>ACTION</th><th>ENDPOINT</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Complete mission (+3, or +4 stylish)</td><td><code>POST /games/{`{slug}`}/agents/{`{handle}`}/complete</code></td></tr>
+          <tr><td>Expose agent (−3, +2 to exposer)</td><td><code>POST /games/{`{slug}`}/agents/{`{handle}`}/expose</code></td></tr>
+          <tr><td>Award survival bonus (+2)</td><td><code>POST /games/{`{slug}`}/agents/{`{handle}`}/survival</code></td></tr>
+          <tr><td>Manual score adjustment</td><td><code>PUT  /games/{`{slug}`}/agents/{`{handle}`}/score</code></td></tr>
+          <tr><td>View leaderboard</td><td><code>GET  /games/{`{slug}`}/leaderboard</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>MISSION POOL UPLOAD</h2>
+      <p style="color:var(--dim);margin-bottom:0.75rem">
+        Mission objectives must be uploaded to S3 before intake opens.
+        They are never served publicly — only returned at registration time.
+      </p>
+      <pre style="background:var(--bg);padding:1rem;overflow-x:auto;font-size:0.8rem">aws s3 cp missions.json s3://&lt;BucketName&gt;/missions/&lt;slug&gt;.json</pre>
+      <p style="margin-top:0.75rem;color:var(--dim);font-size:0.8rem">
+        See <code>infra/template.yaml</code> outputs for BucketName after deployment.
+      </p>
+    </div>
+
+    <div class="card">
+      <h2>MISSION POOL FORMAT</h2>
+      <pre style="background:var(--bg);padding:1rem;overflow-x:auto;font-size:0.8rem">[
+  {`{`}
+    "id": "m-001",
+    "category": "Social Engineering",
+    "difficulty": "Easy",
+    "objective": "Convince three strangers to salute you without explaining why.",
+    "coverStory": "You are running a social experiment for a design class.",
+    "evidence": "One photo showing at least one salute.",
+    "handlerContact": "Submit at the Blue Signal dead drop."
+  {`}`}
+]</pre>
+    </div>
+  </div>
+</Layout>

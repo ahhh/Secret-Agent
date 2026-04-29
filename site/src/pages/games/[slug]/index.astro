@@ -1,0 +1,45 @@
+---
+import Layout from '../../../components/Layout.astro';
+import games from '../../../data/games.json';
+
+export function getStaticPaths() {
+  return games.map(game => ({ params: { slug: game.slug }, props: { game } }));
+}
+
+const { game } = Astro.props;
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const isActive = game.status === 'active';
+---
+<Layout title={game.title}>
+  <div class="container">
+    <p class="dim" style="font-size:0.75rem">// OPERATION BRIEFING</p>
+    <h1>{game.title}</h1>
+
+    <div style="display:flex;gap:1rem;align-items:center;margin:0.75rem 0 1.5rem">
+      <span class={`badge badge-${game.status}`}>{game.status}</span>
+      <span class="dim" style="font-size:0.8rem">{game.location}</span>
+      <span class="dim" style="font-size:0.8rem">{game.startDate} → {game.endDate}</span>
+    </div>
+
+    <div class="card">
+      <h2>BRIEFING</h2>
+      <p>{game.briefing}</p>
+    </div>
+
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-bottom:1.5rem">
+      {isActive && game.intakeEnabled && (
+        <a href={`${base}/games/${game.slug}/join`} class="btn">ACCEPT A MISSION</a>
+      )}
+      <a href={`${base}/games/${game.slug}/leaderboard`} class="btn">LEADERBOARD</a>
+    </div>
+
+    {!isActive && (
+      <div class="card" style="border-color:var(--dim)">
+        <p style="color:var(--dim)">INTAKE OFFLINE — game status: {game.status.toUpperCase()}</p>
+      </div>
+    )}
+
+    <hr />
+    <p style="font-size:0.8rem;color:var(--dim)">Handler: {game.handler}</p>
+  </div>
+</Layout>

@@ -1,0 +1,63 @@
+---
+import Layout from '../components/Layout.astro';
+import games from '../data/games.json';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const activeGames = games.filter(g => g.status === 'active');
+---
+<Layout title="Secret Agent: Field Operations">
+  <div class="container">
+
+    <div style="margin-bottom:2rem">
+      <p class="dim" style="font-size:0.75rem;letter-spacing:0.1em">// FIELD MANUAL — CLASSIFIED</p>
+      <h1 style="font-size:2rem;margin-top:0.5rem">SECRET AGENT<br/>FIELD OPERATIONS</h1>
+      <p style="margin-top:0.75rem;color:var(--dim)">A covert social mission game played in plain sight.</p>
+    </div>
+
+    <div class="card">
+      <h2>THE MISSION</h2>
+      <p>You receive a secret mission.</p>
+      <p>You complete it without revealing you are playing.</p>
+      <p>You collect evidence.</p>
+      <p>Other agents may expose you.</p>
+      <p>The Handler keeps score.</p>
+    </div>
+
+    <div class="card">
+      <h2>HOW IT WORKS</h2>
+      <ol style="padding-left:1.2rem;line-height:2.2">
+        <li>Scan the QR code at the event.</li>
+        <li>Choose your handle. Accept your mission.</li>
+        <li>Complete the objective without breaking cover.</li>
+        <li>Submit evidence to the Handler.</li>
+        <li>Expose rival agents. Avoid detection.</li>
+      </ol>
+    </div>
+
+    {activeGames.length > 0 && (
+      <div class="card">
+        <h2>ACTIVE OPERATIONS</h2>
+        {activeGames.map(g => (
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0;border-bottom:1px solid var(--border)">
+            <a href={`${base}/games/${g.slug}`}>{g.title}</a>
+            <div style="display:flex;gap:0.75rem">
+              <a href={`${base}/games/${g.slug}/join`} class="btn" style="font-size:0.7rem;padding:0.3rem 0.8rem">JOIN</a>
+              <a href={`${base}/games/${g.slug}/leaderboard`} class="btn" style="font-size:0.7rem;padding:0.3rem 0.8rem">SCORES</a>
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+
+    <div style="display:flex;gap:1rem;flex-wrap:wrap;margin-top:1rem">
+      <a href={`${base}/rules`} class="btn">READ THE RULES</a>
+      <a href={`${base}/games`} class="btn">VIEW ALL GAMES</a>
+    </div>
+
+    <hr />
+    <p style="font-size:0.75rem;color:var(--dim)">
+      All missions must be legal, safe, consensual, and venue-appropriate.
+      The Handler's ruling is final.
+    </p>
+
+  </div>
+</Layout>

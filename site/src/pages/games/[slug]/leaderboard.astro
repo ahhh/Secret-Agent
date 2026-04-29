@@ -1,0 +1,92 @@
+---
+import Layout from '../../../components/Layout.astro';
+import games from '../../../data/games.json';
+
+export function getStaticPaths() {
+  return games.map(game => ({ params: { slug: game.slug }, props: { game } }));
+}
+
+const { game } = Astro.props;
+const apiBase = import.meta.env.PUBLIC_API_URL ?? '';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+<Layout title={`Leaderboard — ${game.title}`}>
+  <div class="container">
+    <p class="dim" style="font-size:0.75rem">// FIELD AGENT STATUS — {game.slug.toUpperCase()}</p>
+    <h1>{game.title}</h1>
+    <p class="dim" style="margin-bottom:1.5rem">LEADERBOARD</p>
+
+    <div id="board">
+      <p class="dim">CONNECTING TO HANDLER...</p>
+    </div>
+
+    <div style="display:flex;gap:1rem;margin-top:1.25rem">
+      <button class="btn" id="btn-refresh">REFRESH</button>
+      {game.status === 'active' && (
+        <a href={`${base}/games/${game.slug}/join`} class="btn">JOIN GAME</a>
+      )}
+    </div>
+
+    <p id="updated-at" class="dim" style="margin-top:0.75rem;font-size:0.75rem"></p>
+  </div>
+</Layout>
+
+<script define:vars={{ slug: game.slug, apiBase }}>
+  async function load() {
+    const board = document.getElementById('board');
+    const updatedEl = document.getElementById('updated-at');
+
+    try {
+      const res = await fetch(`${apiBase}/games/${slug}/leaderboard`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+
+      if (updatedEl) {
+        updatedEl.textContent = `LAST UPDATED: ${new Date(data.updatedAt).toLocaleTimeString()}`;
+      }
+
+      if (!data.agents?.length) {
+        board.innerHTML = '<p class="dim">NO AGENTS REGISTERED YET.</p>';
+        return;
+      }
+
+      const rows = data.agents.map((a, i) => {
+        const statusClass = `badge-${a.status}`;
+        const scoreStyle  = a.score < 0 ? 'color:var(--danger)' : '';
+        return `
+          <tr>
+            <td>${i + 1}</td>
+            <td><strong>${esc(a.handle)}</strong></td>
+            <td><span class="badge ${statusClass}">${esc(a.status.replace('-', ' ').toUpperCase())}</span></td>
+            <td class="score" style="${scoreStyle}">${a.score}</td>
+          </tr>`;
+      }).join('');
+
+      board.innerHTML = `
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>HANDLE</th>
+              <th>STATUS</th>
+              <th style="text-align:right">SCORE</th>
+            </tr>
+          </thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+
+    } catch (e) {
+      board.innerHTML = '<p class="error">COMMS FAILURE — UNABLE TO RETRIEVE DATA.</p>';
+    }
+  }
+
+  function esc(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+
+  load();
+  document.getElementById('btn-refresh')?.addEventListener('click', load);
+</script>

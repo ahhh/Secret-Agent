@@ -1,0 +1,167 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  Secret Agent: Field Operations — serverless game backend.
+  Deploy with: cd infra && sam build && sam deploy --guided
+  After deploy, set the ApiUrl output as PUBLIC_API_URL in site/.env and in the
+  GitHub secret PUBLIC_API_URL used by the deploy workflow.
+  Upload mission pools to S3: aws s3 cp missions.json s3://<BucketName>/missions/<slug>.json
+
+Parameters:
+  HandlerApiKey:
+    Type: String
+    NoEcho: true
+    Description: >
+      Secret key for handler-only API operations (complete, expose, score).
+      Include in requests as the X-Handler-Key header.
+
+Globals:
+  Function:
+    Runtime: nodejs22.x
+    Architectures: [arm64]
+    MemorySize: 128
+    Timeout: 15
+    CodeUri: ../lambda/
+    Environment:
+      Variables:
+        BUCKET_NAME: !Ref GameStateBucket
+        HANDLER_API_KEY: !Ref HandlerApiKey
+
+Resources:
+
+  # ── S3 ──────────────────────────────────────────────────────────────────────
+  # Stores two kinds of files:
+  #   games/{slug}.json    — agent roster + score log (written by Lambda)
+  #   missions/{slug}.json — mission pool (uploaded manually by Handler)
+
+  GameStateBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketEncryption:
+        ServerSideEncryptionConfiguration:
+          - ServerSideEncryptionByDefault:
+              SSEAlgorithm: AES256
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: true
+        BlockPublicPolicy: true
+        IgnorePublicAcls: true
+        RestrictPublicBuckets: true
+
+  # ── IAM ─────────────────────────────────────────────────────────────────────
+
+  LambdaRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
+      Policies:
+        - PolicyName: S3GameState
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: [s3:GetObject, s3:PutObject]
+                Resource: !Sub '${GameStateBucket.Arn}/*'
+
+  # ── API Gateway ──────────────────────────────────────────────────────────────
+
+  GameApi:
+    Type: AWS::Serverless::HttpApi
+    Properties:
+      Description: Secret Agent game API
+      CorsConfiguration:
+        AllowOrigins: ['*']
+        AllowHeaders: ['Content-Type', 'X-Handler-Key']
+        AllowMethods: ['GET', 'POST', 'PUT', 'OPTIONS']
+
+  # ── Lambda ───────────────────────────────────────────────────────────────────
+
+  RegisterFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: register.handler
+      Role: !GetAtt LambdaRole.Arn
+      Description: Register agent handle, draw random mission from pool, return briefing
+      Events:
+        Register:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref GameApi
+            Path: /games/{slug}/agents
+            Method: POST
+
+  LeaderboardFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: leaderboard.handler
+      Role: !GetAtt LambdaRole.Arn
+      Description: Return agents sorted by score (public)
+      Events:
+        Leaderboard:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref GameApi
+            Path: /games/{slug}/leaderboard
+            Method: GET
+
+  CompleteMissionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: complete.handler
+      Role: !GetAtt LambdaRole.Arn
+      Description: Mark mission complete, promote to special-agent (handler only)
+      Events:
+        Complete:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref GameApi
+            Path: /games/{slug}/agents/{handle}/complete
+            Method: POST
+
+  HandlerActionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: handler-action.handler
+      Role: !GetAtt LambdaRole.Arn
+      Description: Expose agents, award survival bonus, manual score adjustments (handler only)
+      Events:
+        Expose:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref GameApi
+            Path: /games/{slug}/agents/{handle}/expose
+            Method: POST
+        Survival:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref GameApi
+            Path: /games/{slug}/agents/{handle}/survival
+            Method: POST
+        Score:
+          Type: HttpApi
+          Properties:
+            ApiId: !Ref GameApi
+            Path: /games/{slug}/agents/{handle}/score
+            Method: PUT
+
+# ── Outputs ──────────────────────────────────────────────────────────────────
+
+Outputs:
+  ApiUrl:
+    Description: Set this as PUBLIC_API_URL in site/.env and as a GitHub secret
+    Value: !Sub 'https://${GameApi}.execute-api.${AWS::Region}.amazonaws.com'
+    Export:
+      Name: SecretAgentApiUrl
+
+  BucketName:
+    Description: Upload mission pools here — aws s3 cp missions.json s3://<value>/missions/<slug>.json
+    Value: !Ref GameStateBucket
+    Export:
+      Name: SecretAgentBucket

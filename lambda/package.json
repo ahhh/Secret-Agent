@@ -1,0 +1,8 @@
+{
+  "name": "secret-agent-lambda",
+  "version": "1.0.0",
+  "description": "Lambda functions for Secret Agent: Field Operations",
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.600.0"
+  }
+}
